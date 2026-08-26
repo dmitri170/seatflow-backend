@@ -10,6 +10,6 @@ public class SystemController {
 
     @GetMapping("/ping")
     public SystemStatusResponse ping() {
-        return new SystemStatusResponse("UP","seatflow-backend");
+        return new SystemStatusResponse("UP", "seatflow-backend");
     }
 }
