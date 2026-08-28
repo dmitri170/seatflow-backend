@@ -84,3 +84,26 @@ docker compose exec postgres psql -U seatflow -d seatflow -c "SELECT 1 AS result
 ```powershell
 docker compose down
 ```
+## Миграции базы данных
+
+Для управления схемой базы данных используется Flyway.
+
+Миграции находятся в каталоге:
+
+```text
+src/main/resources/db/migration
+```
+
+При запуске приложения Flyway автоматически применяет новые миграции. Первая миграция:
+
+```text
+V1__create_seatflow_schema.sql
+```
+
+Она создаёт схему `seatflow`. История выполненных миграций хранится в таблице:
+
+```text
+public.flyway_schema_history
+```
+
+Интеграционный тест использует Testcontainers и запускает отдельный PostgreSQL-контейнер на случайном свободном порту. Для выполнения тестов Docker Desktop должен быть запущен.
