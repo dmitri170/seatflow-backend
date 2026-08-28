@@ -82,8 +82,10 @@ docker compose exec postgres psql -U seatflow -d seatflow -c "SELECT 1 AS result
 Остановите контейнер:
 
 ```powershell
+
 docker compose down
 ```
+
 ## Миграции базы данных
 
 Для управления схемой базы данных используется Flyway.
