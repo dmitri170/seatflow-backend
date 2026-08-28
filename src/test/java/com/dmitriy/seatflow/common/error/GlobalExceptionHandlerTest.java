@@ -8,13 +8,18 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = GlobalExceptionHandlerTest.TestController.class)
 @Import({
@@ -94,6 +99,17 @@ class GlobalExceptionHandlerTest {
                 .andExpect(content().string(not(containsString("Sensitive database details"))));
     }
 
+    @Test
+    void shouldReturnMethodNotAllowedForUnsupportedMethod() throws Exception {
+        mockMvc.perform(post("/test/not-found"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.status").value(405))
+                .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"))
+                .andExpect(jsonPath("$.message").value("HTTP method not allowed"))
+                .andExpect(jsonPath("$.path").value("/test/not-found"))
+                .andExpect(jsonPath("$.fieldErrors").isEmpty());
+    }
+
     @RestController
     @RequestMapping("/test")
     public static class TestController {
@@ -112,6 +128,7 @@ class GlobalExceptionHandlerTest {
             throw new ResourceNotFoundException("Venue not found");
         }
     }
+
     static class TestRequest {
 
         @NotBlank

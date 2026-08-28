@@ -12,7 +12,14 @@ public class ApiErrorResponse {
     private final String path;
     private final List<FieldErrorResponse> fieldErrors;
 
-    public ApiErrorResponse(Instant timestamp, int status, ApiErrorCode code, String message, String path, List<FieldErrorResponse> fieldErrors) {
+    public ApiErrorResponse(
+            Instant timestamp,
+            int status,
+            ApiErrorCode code,
+            String message,
+            String path,
+            List<FieldErrorResponse> fieldErrors
+    ) {
         this.timestamp = timestamp;
         this.status = status;
         this.code = code;

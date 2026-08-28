@@ -139,5 +139,6 @@ public.flyway_schema_history
 | `MALFORMED_REQUEST`  |         400 | Некорректный JSON                |
 | `RESOURCE_NOT_FOUND` |         404 | Ресурс или endpoint не найден    |
 | `INTERNAL_ERROR`     |         500 | Непредвиденная внутренняя ошибка |
+| `METHOD_NOT_ALLOWED` |         405 | HTTP-метод не поддерживается     |
 
 Для внутренних ошибок клиенту не возвращаются stack trace и технические детали исключения.
