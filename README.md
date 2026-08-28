@@ -48,3 +48,39 @@ GET /actuator/health
   "status": "UP"
 }
 ```
+
+## Локальная база данных PostgreSQL
+
+Для запуска базы данных требуется установленный и запущенный Docker Desktop.
+
+Создайте локальный файл с переменными окружения:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Запустите PostgreSQL:
+
+```powershell
+docker compose up -d postgres
+```
+
+Проверьте состояние контейнера:
+
+```powershell
+docker compose ps
+```
+
+Контейнер должен перейти в состояние `healthy`.
+
+Проверьте подключение к базе данных:
+
+```powershell
+docker compose exec postgres psql -U seatflow -d seatflow -c "SELECT 1 AS result;"
+```
+
+Остановите контейнер:
+
+```powershell
+docker compose down
+```
