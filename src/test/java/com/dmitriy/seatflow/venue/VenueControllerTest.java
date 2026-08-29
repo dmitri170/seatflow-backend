@@ -205,4 +205,19 @@ class VenueControllerTest {
 
         verifyNoInteractions(venueService);
     }
+
+    @Test
+    void shouldReturnValidationErrorForMalformedVenueId() throws Exception {
+        mockMvc.perform(get("/api/v1/venues/not-a-uuid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/v1/venues/not-a-uuid"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("id"))
+                .andExpect(jsonPath("$.fieldErrors[0].message")
+                        .value("has invalid format"));
+
+        verifyNoInteractions(venueService);
+    }
 }
