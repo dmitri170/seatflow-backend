@@ -142,3 +142,45 @@ public.flyway_schema_history
 | `METHOD_NOT_ALLOWED` |         405 | HTTP-метод не поддерживается     |
 
 Для внутренних ошибок клиенту не возвращаются stack trace и технические детали исключения.
+
+## Venue API
+
+API позволяет создавать и получать площадки проведения событий.
+
+### Создание площадки
+
+```http
+POST /api/v1/venues
+Content-Type: application/json
+```
+
+Пример запроса:
+
+```json
+{
+  "name": "Luzhniki Stadium",
+  "city": "Moscow",
+  "address": "Luzhnetskaya Naberezhnaya, 24",
+  "timezone": "Europe/Moscow"
+}
+```
+
+Успешный запрос возвращает `201 Created` и заголовок:
+
+```text
+Location: /api/v1/venues/{id}
+```
+
+Часовой пояс должен быть корректным идентификатором IANA, например `Europe/Moscow`.
+
+### Получение площадки
+
+```http
+GET /api/v1/venues/{id}
+```
+
+### Получение списка площадок
+
+```http
+GET /api/v1/venues
+```

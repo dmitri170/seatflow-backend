@@ -8,12 +8,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import com.dmitriy.seatflow.venue.Venue;
+import com.dmitriy.seatflow.venue.VenueRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 @SpringBootTest
 class SeatflowBackendApplicationTests {
+
+	@Autowired
+	private VenueRepository venueRepository;
 
 	@Container
 	@ServiceConnection
@@ -45,5 +50,29 @@ class SeatflowBackendApplicationTests {
 
 		assertThat(schemaExists).isTrue();
 		assertThat(appliedMigrations).isEqualTo(1);
+	}
+
+	@Test
+	void shouldPersistVenue() {
+		Venue venue = new Venue(
+				"Luzhniki Stadium",
+				"Moscow",
+				"Luzhnetskaya Naberezhnaya, 24",
+				"Europe/Moscow"
+		);
+
+		Venue savedVenue = venueRepository.saveAndFlush(venue);
+
+		Venue foundVenue = venueRepository.findById(savedVenue.getId())
+				.orElseThrow();
+
+		assertThat(foundVenue.getId()).isNotNull();
+		assertThat(foundVenue.getName()).isEqualTo("Luzhniki Stadium");
+		assertThat(foundVenue.getCity()).isEqualTo("Moscow");
+		assertThat(foundVenue.getAddress())
+				.isEqualTo("Luzhnetskaya Naberezhnaya, 24");
+		assertThat(foundVenue.getTimezone()).isEqualTo("Europe/Moscow");
+		assertThat(foundVenue.getCreatedAt()).isNotNull();
+		assertThat(foundVenue.getUpdatedAt()).isNotNull();
 	}
 }
