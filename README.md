@@ -187,3 +187,46 @@ POST /api/v1/venues/{venueId}/halls
 GET  /api/v1/venues/{venueId}/halls
 GET  /api/v1/halls/{hallId}
 ```
+
+## API documentation
+
+После запуска приложения документация API доступна по следующим адресам:
+
+* Swagger UI: http://localhost:8080/swagger-ui/index.html
+* OpenAPI JSON: http://localhost:8080/v3/api-docs
+
+Если приложение запущено на другом порту, замените `8080` на используемый порт.
+
+## API conventions
+
+* базовый путь REST API — `/api/v1`;
+* запросы и ответы передаются в формате JSON;
+* идентификаторы ресурсов имеют формат UUID;
+* дата и время передаются в UTC в формате ISO 8601;
+* успешное создание ресурса возвращает `201 Created`;
+* заголовок `Location` содержит URI созданного ресурса;
+* ошибки возвращаются в едином формате `ApiErrorResponse`.
+
+### HTTP-статусы
+
+| Статус                      | Описание                                     |
+| --------------------------- | -------------------------------------------- |
+| `200 OK`                    | Запрос успешно выполнен                      |
+| `201 Created`               | Ресурс успешно создан                        |
+| `400 Bad Request`           | Некорректный JSON, UUID или ошибка валидации |
+| `404 Not Found`             | Запрашиваемый ресурс не найден               |
+| `409 Conflict`              | Ресурс конфликтует с существующими данными   |
+| `500 Internal Server Error` | Непредвиденная ошибка сервера                |
+
+### Формат ошибки
+
+```json
+{
+  "timestamp": "2026-08-31T12:00:00Z",
+  "status": 404,
+  "code": "RESOURCE_NOT_FOUND",
+  "message": "Venue not found",
+  "path": "/api/v1/venues/3d03415e-2494-410f-b6f6-12b6e3610290",
+  "fieldErrors": []
+}
+```
