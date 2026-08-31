@@ -125,6 +125,32 @@ class HallControllerTest {
     }
 
     @Test
+    void shouldReturnValidationErrorWhenCapacityIsMissing() throws Exception {
+        UUID venueId = UUID.randomUUID();
+
+        mockMvc.perform(post(
+                        "/api/v1/venues/{venueId}/halls",
+                        venueId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Main Hall"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.path").value(
+                        "/api/v1/venues/" + venueId + "/halls"
+                ))
+                .andExpect(jsonPath("$.fieldErrors[0].field")
+                        .value("capacity"));
+
+        // Обязательное поле проверяется до вызова сервиса.
+        verifyNoInteractions(hallService);
+    }
+
+    @Test
     void shouldReturnConflictWhenHallAlreadyExists() throws Exception {
         UUID venueId = UUID.randomUUID();
 
