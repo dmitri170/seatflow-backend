@@ -28,7 +28,7 @@ public class Hall {
     @Column(nullable = false, updatable = false,name="created_at")
     private Instant createdAt;
 
-    @Column(nullable = false, updatable = false,name="updated_at")
+    @Column(nullable = false, name="updated_at")
     private Instant updatedAt;
 
     @PrePersist
