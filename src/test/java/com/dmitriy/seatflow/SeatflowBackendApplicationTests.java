@@ -1,5 +1,9 @@
 package com.dmitriy.seatflow;
 
+import com.dmitriy.seatflow.hall.Hall;
+import com.dmitriy.seatflow.hall.HallRepository;
+import com.dmitriy.seatflow.venue.Venue;
+import com.dmitriy.seatflow.venue.VenueRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,8 +12,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
-import com.dmitriy.seatflow.venue.Venue;
-import com.dmitriy.seatflow.venue.VenueRepository;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,6 +23,9 @@ class SeatflowBackendApplicationTests {
 
 	@Autowired
 	private VenueRepository venueRepository;
+
+	@Autowired
+	private HallRepository hallRepository;
 
 	@Container
 	@ServiceConnection
@@ -41,15 +48,16 @@ class SeatflowBackendApplicationTests {
                 )
                 """, Boolean.class);
 
-		Integer appliedMigrations = jdbcTemplate.queryForObject("""
-                SELECT COUNT(*)
-                FROM public.flyway_schema_history
-                WHERE version = '1'
-                  AND success = TRUE
-                """, Integer.class);
+		List<String> appliedVersions = jdbcTemplate.queryForList("""
+				SELECT version
+				FROM public.flyway_schema_history
+				WHERE success = TRUE
+				ORDER BY installed_rank
+				""", String.class);
 
 		assertThat(schemaExists).isTrue();
-		assertThat(appliedMigrations).isEqualTo(1);
+		// Проверяем не только количество, но и порядок применённых миграций.
+		assertThat(appliedVersions).containsExactly("1", "2", "3");
 	}
 
 	@Test
@@ -74,5 +82,37 @@ class SeatflowBackendApplicationTests {
 		assertThat(foundVenue.getTimezone()).isEqualTo("Europe/Moscow");
 		assertThat(foundVenue.getCreatedAt()).isNotNull();
 		assertThat(foundVenue.getUpdatedAt()).isNotNull();
+	}
+
+	@Test
+	void shouldPersistHallForVenue() {
+		Venue venue = new Venue(
+				"Crocus City Hall",
+				"Krasnogorsk",
+				"Mezhdunarodnaya Street, 20",
+				"Europe/Moscow"
+		);
+		Venue savedVenue = venueRepository.saveAndFlush(venue);
+
+		Hall hall = new Hall(savedVenue, "Concert Hall", 6200);
+		Hall savedHall = hallRepository.saveAndFlush(hall);
+
+		Hall foundHall = hallRepository.findById(savedHall.getId())
+				.orElseThrow();
+
+		assertThat(foundHall.getId()).isNotNull();
+		assertThat(foundHall.getVenue().getId()).isEqualTo(savedVenue.getId());
+		assertThat(foundHall.getName()).isEqualTo("Concert Hall");
+		assertThat(foundHall.getCapacity()).isEqualTo(6200);
+		assertThat(foundHall.getCreatedAt()).isNotNull();
+		assertThat(foundHall.getUpdatedAt()).isNotNull();
+
+		// Дополнительно проверяем repository-метод, который использует HallService.
+		List<Hall> venueHalls = hallRepository
+				.findAllByVenue_IdOrderByNameAsc(savedVenue.getId());
+
+		assertThat(venueHalls)
+				.extracting(Hall::getId)
+				.contains(savedHall.getId());
 	}
 }

@@ -183,4 +183,7 @@ GET /api/v1/venues/{id}
 
 ```http
 GET /api/v1/venues
+POST /api/v1/venues/{venueId}/halls
+GET  /api/v1/venues/{venueId}/halls
+GET  /api/v1/halls/{hallId}
 ```
