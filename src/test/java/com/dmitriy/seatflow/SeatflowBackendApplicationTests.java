@@ -57,7 +57,7 @@ class SeatflowBackendApplicationTests {
 
 		assertThat(schemaExists).isTrue();
 		// Проверяем не только количество, но и порядок применённых миграций.
-		assertThat(appliedVersions).containsExactly("1", "2", "3", "4");
+		assertThat(appliedVersions).containsExactly("1", "2", "3", "4", "5");
 	}
 
 	@Test
