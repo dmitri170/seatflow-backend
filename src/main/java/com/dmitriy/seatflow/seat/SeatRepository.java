@@ -8,10 +8,4 @@ import java.util.UUID;
 public interface SeatRepository extends JpaRepository<Seat, UUID> {
 
     List<Seat> findAllBySectorIdOrderByRowNumberAscSeatNumberAsc(UUID sectorId);
-
-    boolean existsBySectorIdAndRowNumberAndSeatNumber(
-            UUID sectorId,
-            int rowNumber,
-            int seatNumber
-    );
 }

@@ -1,12 +1,12 @@
 CREATE TABLE seatflow.sectors
 (
-    id             UUID                     NOT NULL,
-    hall_id        UUID                     NOT NULL,
-    name           VARCHAR(100)             NOT NULL,
-    row_count      INTEGER                  NOT NULL,
-    seats_per_row  INTEGER                  NOT NULL,
-    created_at     TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at     TIMESTAMP WITH TIME ZONE NOT NULL,
+    id            UUID                     NOT NULL,
+    hall_id       UUID                     NOT NULL,
+    name          VARCHAR(100)             NOT NULL,
+    row_count     INTEGER                  NOT NULL,
+    seats_per_row INTEGER                  NOT NULL,
+    created_at    TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at    TIMESTAMP WITH TIME ZONE NOT NULL,
 
     CONSTRAINT pk_sectors
         PRIMARY KEY (id),
@@ -16,9 +16,6 @@ CREATE TABLE seatflow.sectors
             REFERENCES seatflow.halls (id)
             ON DELETE CASCADE,
 
-    CONSTRAINT uq_sectors_hall_name
-        UNIQUE (hall_id, name),
-
     CONSTRAINT chk_sectors_row_count_positive
         CHECK (row_count > 0),
 
@@ -26,17 +23,20 @@ CREATE TABLE seatflow.sectors
         CHECK (seats_per_row > 0)
 );
 
+CREATE UNIQUE INDEX uq_sectors_hall_name
+    ON seatflow.sectors (hall_id, LOWER(name));
+
 COMMENT ON TABLE seatflow.sectors
     IS 'Seating sectors located inside halls';
 
 CREATE TABLE seatflow.seats
 (
-    id           UUID                     NOT NULL,
-    sector_id    UUID                     NOT NULL,
-    row_number   INTEGER                  NOT NULL,
-    seat_number  INTEGER                  NOT NULL,
-    created_at   TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at   TIMESTAMP WITH TIME ZONE NOT NULL,
+    id          UUID                     NOT NULL,
+    sector_id   UUID                     NOT NULL,
+    row_number  INTEGER                  NOT NULL,
+    seat_number INTEGER                  NOT NULL,
+    created_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at  TIMESTAMP WITH TIME ZONE NOT NULL,
 
     CONSTRAINT pk_seats
         PRIMARY KEY (id),
