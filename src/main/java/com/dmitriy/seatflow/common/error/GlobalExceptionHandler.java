@@ -191,4 +191,23 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(status).body(response);
     }
+
+    @ExceptionHandler(RequestValidationException.class)
+    public ResponseEntity<ApiErrorResponse> handleRequestValidation(
+            RequestValidationException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                ApiErrorCode.VALIDATION_ERROR,
+                exception.getMessage(),
+                request.getRequestURI(),
+                List.of()
+        );
+
+        return ResponseEntity.status(status).body(response);
+    }
 }
