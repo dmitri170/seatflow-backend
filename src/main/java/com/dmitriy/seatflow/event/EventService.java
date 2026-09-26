@@ -4,6 +4,7 @@ import com.dmitriy.seatflow.common.error.RequestValidationException;
 import com.dmitriy.seatflow.common.error.ResourceNotFoundException;
 import com.dmitriy.seatflow.event.dto.CreateEventRequest;
 import com.dmitriy.seatflow.event.dto.EventResponse;
+import com.dmitriy.seatflow.eventseat.EventSeatService;
 import com.dmitriy.seatflow.hall.Hall;
 import com.dmitriy.seatflow.hall.HallRepository;
 import org.springframework.stereotype.Service;
@@ -20,13 +21,16 @@ public class EventService {
 
     private final HallRepository hallRepository;
     private final EventRepository eventRepository;
+    private final EventSeatService eventSeatService;
 
     public EventService(
             HallRepository hallRepository,
-            EventRepository eventRepository
+            EventRepository eventRepository,
+            EventSeatService eventSeatService
     ) {
         this.hallRepository = hallRepository;
         this.eventRepository = eventRepository;
+        this.eventSeatService = eventSeatService;
     }
 
     /**
@@ -66,7 +70,7 @@ public class EventService {
         );
 
         Event savedEvent = eventRepository.save(event);
-
+        eventSeatService.createForEvent(savedEvent);
         return toResponse(savedEvent);
     }
 
