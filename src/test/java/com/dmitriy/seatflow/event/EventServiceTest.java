@@ -4,6 +4,7 @@ import com.dmitriy.seatflow.common.error.RequestValidationException;
 import com.dmitriy.seatflow.common.error.ResourceNotFoundException;
 import com.dmitriy.seatflow.event.dto.CreateEventRequest;
 import com.dmitriy.seatflow.event.dto.EventResponse;
+import com.dmitriy.seatflow.eventseat.EventSeatService;
 import com.dmitriy.seatflow.hall.Hall;
 import com.dmitriy.seatflow.hall.HallRepository;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,9 @@ class EventServiceTest {
 
     @Mock
     private EventRepository eventRepository;
+
+    @Mock
+    private EventSeatService eventSeatService;
 
     @InjectMocks
     private EventService eventService;
@@ -90,6 +94,7 @@ class EventServiceTest {
         );
 
         verify(eventRepository).save(eventCaptor.capture());
+        verify(eventSeatService).createForEvent(savedEvent);
 
         Event eventToSave = eventCaptor.getValue();
 
