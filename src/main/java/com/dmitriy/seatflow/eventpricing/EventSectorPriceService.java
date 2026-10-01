@@ -2,6 +2,7 @@ package com.dmitriy.seatflow.eventpricing;
 
 import com.dmitriy.seatflow.common.error.ResourceConflictException;
 import com.dmitriy.seatflow.common.error.ResourceNotFoundException;
+import com.dmitriy.seatflow.common.error.RequestValidationException;
 import com.dmitriy.seatflow.common.money.Money;
 import com.dmitriy.seatflow.event.Event;
 import com.dmitriy.seatflow.event.EventRepository;
@@ -9,16 +10,17 @@ import com.dmitriy.seatflow.eventpricing.dto.EventSectorPriceResponse;
 import com.dmitriy.seatflow.eventpricing.dto.SetEventPricesRequest;
 import com.dmitriy.seatflow.eventpricing.dto.SetEventSectorPriceRequest;
 import com.dmitriy.seatflow.sector.Sector;
-import com.dmitriy.seatflow.hall.Hall;
 import com.dmitriy.seatflow.sector.SectorRepository;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class EventSectorPriceService {
@@ -27,7 +29,11 @@ public class EventSectorPriceService {
     private final EventRepository eventRepository;
     private final SectorRepository sectorRepository;
 
-    public EventSectorPriceService(EventSectorPriceRepository eventSectorPriceRepository, EventRepository eventRepository, SectorRepository sectorRepository) {
+    public EventSectorPriceService(
+            EventSectorPriceRepository eventSectorPriceRepository,
+            EventRepository eventRepository,
+            SectorRepository sectorRepository
+    ) {
         this.eventSectorPriceRepository = eventSectorPriceRepository;
         this.eventRepository = eventRepository;
         this.sectorRepository = sectorRepository;
@@ -94,6 +100,15 @@ public class EventSectorPriceService {
             sectorsById.put(sector.getId(), sector);
         }
 
+        Map<UUID, Money> requestedMoneyBySectorId = new HashMap<>();
+
+        for (SetEventSectorPriceRequest requestedPrice : request.prices()) {
+            requestedMoneyBySectorId.put(
+                    requestedPrice.sectorId(),
+                    createMoney(requestedPrice)
+            );
+        }
+
         List<EventSectorPrice> existingPrices =
                 eventSectorPriceRepository
                         .findAllByEvent_IdOrderBySector_NameAsc(eventId);
@@ -112,11 +127,7 @@ public class EventSectorPriceService {
 
         for (SetEventSectorPriceRequest requestedPrice : request.prices()) {
             UUID sectorId = requestedPrice.sectorId();
-
-            Money money = new Money(
-                    requestedPrice.amount(),
-                    requestedPrice.currency()
-            );
+            Money money = requestedMoneyBySectorId.get(sectorId);
 
             EventSectorPrice eventSectorPrice =
                     existingPricesBySectorId.get(sectorId);
@@ -144,18 +155,32 @@ public class EventSectorPriceService {
     }
 
     @Transactional(readOnly = true)
-    public List<EventSectorPriceResponse> getPrices(UUID eventId){
-        if(!eventRepository.existsById(eventId)){
+    public List<EventSectorPriceResponse> getPrices(UUID eventId) {
+        if (!eventRepository.existsById(eventId)) {
             throw new ResourceNotFoundException("Event not found: " + eventId);
         }
 
-        List<EventSectorPrice> eventSectorPriceList=eventSectorPriceRepository.findAllByEvent_IdOrderBySector_NameAsc(eventId);
-
-        return eventSectorPriceList.stream().map(this::toResponse).toList();
+        return eventSectorPriceRepository
+                .findAllByEvent_IdOrderBySector_NameAsc(eventId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
+
+    private Money createMoney(SetEventSectorPriceRequest requestedPrice) {
+        try {
+            return new Money(
+                    requestedPrice.amount(),
+                    requestedPrice.currency()
+            );
+        } catch (IllegalArgumentException exception) {
+            throw new RequestValidationException(exception.getMessage());
+        }
+    }
+
     private EventSectorPriceResponse toResponse(
             EventSectorPrice eventSectorPrice
-    ){
+    ) {
         return new EventSectorPriceResponse(
                 eventSectorPrice.getId(),
                 eventSectorPrice.getEvent().getId(),

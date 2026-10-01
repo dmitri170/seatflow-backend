@@ -14,7 +14,7 @@ public class EventSectorPrice {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id	;
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_id", nullable = false)
@@ -25,7 +25,7 @@ public class EventSectorPrice {
     private Sector sector;
 
     @Embedded
-    private Money price	;
+    private Money price;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -33,16 +33,13 @@ public class EventSectorPrice {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected EventSectorPrice(){
-
+    protected EventSectorPrice() {
     }
 
     public EventSectorPrice(Event event, Sector sector, Money price) {
-        if (event == null||sector==null||price==null) {
-            throw new IllegalArgumentException(
-                    "must not be null"
-            );
-        }
+        requireNotNull(event, "Event");
+        requireNotNull(sector, "Sector");
+        requireNotNull(price, "Price");
 
         this.event = event;
         this.sector = sector;
@@ -84,12 +81,17 @@ public class EventSectorPrice {
     public Instant getUpdatedAt() {
         return updatedAt;
     }
-    public void changePrice(Money price){
-        if(price==null){
+
+    public void changePrice(Money price) {
+        requireNotNull(price, "Price");
+        this.price = price;
+    }
+
+    private static void requireNotNull(Object value, String fieldName) {
+        if (value == null) {
             throw new IllegalArgumentException(
-                    "Price must not be null"
+                    fieldName + " must not be null"
             );
         }
-        this.price=price;
     }
 }
