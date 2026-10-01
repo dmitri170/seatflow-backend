@@ -8,6 +8,12 @@ import com.dmitriy.seatflow.hall.Hall;
 import com.dmitriy.seatflow.hall.HallRepository;
 import com.dmitriy.seatflow.venue.Venue;
 import com.dmitriy.seatflow.venue.VenueRepository;
+import com.dmitriy.seatflow.eventpricing.EventSectorPriceRepository;
+import com.dmitriy.seatflow.eventpricing.EventSectorPriceService;
+import com.dmitriy.seatflow.eventpricing.dto.EventSectorPriceResponse;
+import com.dmitriy.seatflow.eventpricing.dto.SetEventPricesRequest;
+import com.dmitriy.seatflow.eventpricing.dto.SetEventSectorPriceRequest;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,6 +46,12 @@ class SeatflowBackendApplicationTests {
 
 	@Autowired
 	private EventSeatRepository eventSeatRepository;
+
+	@Autowired
+	private EventSectorPriceService eventSectorPriceService;
+
+	@Autowired
+	private EventSectorPriceRepository eventSectorPriceRepository;
 
 	@Container
 	@ServiceConnection
@@ -216,5 +228,135 @@ class SeatflowBackendApplicationTests {
 		assertThat(statuses)
 				.hasSize(2)
 				.containsOnly("AVAILABLE");
+	}
+
+	@Test
+	@Transactional
+	void shouldPersistAndUpdateEventSectorPrice() {
+		Venue venue = venueRepository.saveAndFlush(new Venue(
+				"Pricing Test Venue",
+				"Moscow",
+				"Pricing Test Address, 1",
+				"Europe/Moscow"
+		));
+
+		Hall hall = hallRepository.saveAndFlush(
+				new Hall(venue, "Pricing Test Hall", 100)
+		);
+
+		UUID sectorId = UUID.randomUUID();
+		Timestamp now = Timestamp.from(Instant.now());
+
+		jdbcTemplate.update("""
+            INSERT INTO seatflow.sectors (
+                id, hall_id, name, row_count, seats_per_row,
+                created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+				sectorId,
+				hall.getId(),
+				"Parterre",
+				10,
+				10,
+				now,
+				now
+		);
+
+		CreateEventRequest eventRequest = new CreateEventRequest(
+				"Pricing Integration Test",
+				"Checks event sector pricing",
+				Instant.parse("2027-11-10T16:00:00Z"),
+				Instant.parse("2027-11-10T19:00:00Z")
+		);
+
+		EventResponse createdEvent = eventService.createEvent(
+				hall.getId(),
+				eventRequest
+		);
+
+		SetEventPricesRequest initialPrices =
+				new SetEventPricesRequest(
+						List.of(
+								new SetEventSectorPriceRequest(
+										sectorId,
+										new BigDecimal("1500.00"),
+										"RUB"
+								)
+						)
+				);
+
+		List<EventSectorPriceResponse> createdPrices =
+				eventSectorPriceService.setPrices(
+						createdEvent.getId(),
+						initialPrices
+				);
+
+		eventSectorPriceRepository.flush();
+
+		assertThat(createdPrices).hasSize(1);
+		assertThat(createdPrices.getFirst().eventId())
+				.isEqualTo(createdEvent.getId());
+		assertThat(createdPrices.getFirst().sectorId())
+				.isEqualTo(sectorId);
+		assertThat(createdPrices.getFirst().amount())
+				.isEqualByComparingTo("1500.00");
+		assertThat(createdPrices.getFirst().currency())
+				.isEqualTo("RUB");
+
+		SetEventPricesRequest updatedPrices =
+				new SetEventPricesRequest(
+						List.of(
+								new SetEventSectorPriceRequest(
+										sectorId,
+										new BigDecimal("1800.00"),
+										"RUB"
+								)
+						)
+				);
+
+		eventSectorPriceService.setPrices(
+				createdEvent.getId(),
+				updatedPrices
+		);
+
+		eventSectorPriceRepository.flush();
+
+		Integer priceCount = jdbcTemplate.queryForObject("""
+            SELECT COUNT(*)
+            FROM seatflow.event_sector_prices
+            WHERE event_id = ?
+              AND sector_id = ?
+            """,
+				Integer.class,
+				createdEvent.getId(),
+				sectorId
+		);
+
+		BigDecimal storedAmount = jdbcTemplate.queryForObject("""
+            SELECT amount
+            FROM seatflow.event_sector_prices
+            WHERE event_id = ?
+              AND sector_id = ?
+            """,
+				BigDecimal.class,
+				createdEvent.getId(),
+				sectorId
+		);
+
+		String storedCurrency = jdbcTemplate.queryForObject("""
+            SELECT currency
+            FROM seatflow.event_sector_prices
+            WHERE event_id = ?
+              AND sector_id = ?
+            """,
+				String.class,
+				createdEvent.getId(),
+				sectorId
+		);
+
+		assertThat(priceCount).isEqualTo(1);
+		assertThat(storedAmount).isEqualByComparingTo("1800.00");
+		assertThat(storedCurrency).isEqualTo("RUB");
 	}
 }
